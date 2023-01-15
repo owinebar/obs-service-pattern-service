@@ -1,0 +1,11 @@
+
+This is a source service for Open Build Service.
+It allows users to generate a set of services based
+simple templates with positional parameters.
+
+One intended purpose is to provide a way to
+systematically generate spec files for a package
+with multiple builds.  Embedding the logic
+in a service file allows the spec files to be generated
+by a WebHook trigger from the SCM.
+
