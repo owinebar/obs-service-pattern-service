@@ -431,6 +431,7 @@ while read s tp tf; do
 	fi
     fi
 done
+
 exec <&10
 exec 10<&-
 
