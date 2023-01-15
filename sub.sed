@@ -4,24 +4,24 @@
     # Initialize hold space
     x;z;x
     : findnextsub
-    t clearmatchsuccess1
-    : clearmatchsuccess1
+    t clear1
+    : clear1
     # if we are at the end of the line
     # clean up and restart cycle
-    s/^([^\\$]+)$/\1/ ; t returneol
+    s/^([^\$]*)$/\1/ ; t returnEOL
     # Otherwise if there are non-control chars, accumulate 
-    s/^([^\\$]+)/\1\n/; t accumulate
+    s/^([^\$]+)/\1\n/; t accumulate
     # Must have a control sequence at the head
     s/^\\\\/\\\n/ ; t accumulate
     s/^\\\$/\$\n/ ; t accumulate
     s/^\\/\\\n/ ; t accumulate
-    s/^\$\{([0-9]+)\}/\1\n/ ; t substitute
+    s/^\$\{([1-9][0-9]*)\}/\1\n/ ; t substitute
     s/^\$/\$\n/ ; t accumulate
     # should be impossible
     b nomatcherr
-    :subparam
+    :substitute
     # commands of the form
-    # s/<parameter number>\n/<replacement text>\n/
+    # s#<parameter number>\n#<replacement text>\n#
     
     # if not matched, provide empty value
     s/^[^\n]+\n//
@@ -50,7 +50,7 @@
     s/^([^\n]+)\n(.*)/\2/
     b findnextsub
     
-    : returneol
+    : returnEOL
     H
     x
     s/^([^\n]+)\n/\1/

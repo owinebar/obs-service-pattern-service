@@ -1,14 +1,11 @@
 # Initialize hold space
 x;z;x
 : loop
-t clearmatchsuccess1
-: clearmatchsuccess1
-s/^$//; t returnquoted
-s~^([^\[@.?*()|+{}/\$\\])*$~\1~; t returnEOL
-s~^([^\[@.?*()|+{}/\$\\])+~\1\n~; t accumulate
+t clear1; : clear1
+s~^([^[@.?*()|+{}#$\]*)$~\1~; t returnEOL
+s~^([^[@.?*()|+{}#$\]+)~\1\n~; t accumulate
 # First character must be special
-s@(.)@\1\n@
-s~^(\[|[@.?*()|+{}/\$\\])~\\\1\n~; t accumulate
+s~^([[@.?*()|+{}#$\])~\\\1\n~; t accumulate
 b nomatcherr
 : accumulate
 # First line of pattern space contains text to accumulate
@@ -22,7 +19,7 @@ s/^([^\n]+)\n(.*)/\1/
 x
 s/^([^\n]+)\n(.*)/\2/
 b loop
-: returneol
+: returnEOL
 H
 x
 s/^([^\n]+)\n/\1/

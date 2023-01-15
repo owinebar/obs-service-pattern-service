@@ -7,6 +7,75 @@ if [ "$service_name" = "bash" ]; then
     echo "Service name not recognized" >&2
     exit 1
 fi
+#  See regexp-quote.sed for readable,commented version
+requote_sed=$'x;z;x;: loop; t clear1; : clear1;s~^([^[@.?*()|+{}#$\\]*)$~\\1~; t returnEOL;s~^([^[@.?*()|+{}#$\\]+)~\\1\\n~; t accumulate;s~^([[@.?*()|+{}#$\\])~\\\\\\1\\n~; t accumulate;b nomatcherr;: accumulate;x;G;s/^([^\\n]*)\\n([^\\n]+)\\n/\\1\\2\\n/;h;s/^([^\\n]+)\\n(.*)/\\1/;x;s/^([^\\n]+)\\n(.*)/\\2/;b loop;: returnEOL;H;x;s/^([^\\n]+)\\n/\\1/;p;d;: nomatcherr;= ; a Impossible non-match\nq'
+sub_prog1=''
+sub_prog1+=$'/$|\\/ {\n'
+sub_prog1+=$'x;z;x\n'
+sub_prog1+=$': findnextsub\n'
+sub_prog1+=$'t clear1;: clear1\n'
+sub_prog1+=$'s/^([^$]*)$/1/ ; t returnEOL\n'
+sub_prog1+=$'s/^([^$]+)/1n/; t accumulate\n'
+sub_prog1+=$'s/^\\\\/\\n/ ; t accumulate\n'
+sub_prog1+=$'s/^\\$/$n/ ; t accumulate\n'
+sub_prog1+=$'s/^\\/\\n/ ; t accumulate\n'
+sub_prog1+=$'s/^${([1-9][0-9]*)}/1n/ ; t substitute\n'
+sub_prog1+=$'s/^$/$n/ ; t accumulate\n'
+sub_prog1+=$'b nomatcherr\n'
+sub_prog1+=$':substitute\n'
+# Commands of the form
+# s#<number>#<re-quoted replacement text>#g
+# go here, for each positional parameter assigned a value by the table
+sub_prog2=""
+sub_prog2+=$'s/^[^n]+n//\n'
+sub_prog2+=$'b findnextsub\n'
+sub_prog2+=$'s@(.)@1n@\n'
+sub_prog2+=$'s~^([|[@.?*()|+{}/$\\])~\\1~\n'
+sub_prog2+=$'x\n'
+sub_prog2+=$'G\n'
+sub_prog2+=$'s/^([^n]*)n([^n]*)n/12n/\n'
+sub_prog2+=$'h\n'
+sub_prog2+=$'s/^([^n]+)n.*/1/\n'
+sub_prog2+=$'x\n'
+sub_prog2+=$'s/^[^n]+n(.*)/1/\n'
+sub_prog2+=$'b findnextsub\n'
+sub_prog2+=$'\n'
+sub_prog2+=$': accumulate\n'
+sub_prog2+=$'x\n'
+sub_prog2+=$'G\n'
+sub_prog2+=$'s/^([^n]*)n([^n]+)n/12n/\n'
+sub_prog2+=$'h\n'
+sub_prog2+=$'s/^([^n]+)n(.*)/1/\n'
+sub_prog2+=$'x\n'
+sub_prog2+=$'s/^([^n]+)n(.*)/2/\n'
+sub_prog2+=$'b findnextsub\n'
+sub_prog2+=$': returnEOL\n'
+sub_prog2+=$'H\n'
+sub_prog2+=$'x\n'
+sub_prog2+=$'s/^([^n]+)n/1/\n'
+sub_prog2+=$'p\n'
+sub_prog2+=$'d\n'
+sub_prog2+=$': nomatcherr\n'
+sub_prog2+=$'= ; a Impossible non-match\n'
+sub_prog2+=$'q\n'
+sub_prog2+=$'}\n'
+
+re_quote() {
+    printf "%s\n" "$1" |
+	sed -Ene "$requote_sed" |
+	head -c -1
+}
+make_sub_prog() {
+    local cmds=""
+    local i=1
+    while (( $# > 0 )); do
+	cmds+='s#'$i'\n#\'"$1"'\n#'
+	cmds+=$'\n'
+	(( i++ ))
+    done
+    local do_sub="$sub_prog1$cmds$sub_prog2"
+    printf "%s" "$do_sub"
+}
 legal_name() {
     local s="$1" tmp
     [ "$s" ] || return 1
@@ -436,6 +505,16 @@ exec <&10
 exec 10<&-
 
 N=${#tmpls[@]}
+exec 10<&0
+exec <"$infile"
+while read -a vals; do
+    for (( i = 0; i < N; i++ )); do
+	prog=
+    done
+done
+
+exec <&10
+exec 10<&-
 for (( i=0; i < N ; i++ )); do
     x="${exprs[$i]}"
     xtp="${expr_tps[$i]}"
