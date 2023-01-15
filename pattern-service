@@ -1,0 +1,479 @@
+#!/bin/bash
+
+full_service="$(realpath "$0")"
+service_name="$(basename "$0")"
+service_dir="$(dirname "$full_service")"
+if [ "$service_name" = "bash" ]; then
+    echo "Service name not recognized" >&2
+    exit 1
+fi
+legal_name() {
+    local s="$1" tmp
+    [ "$s" ] || return 1
+    printf -v tmp "%q" "$s"
+    [ "$s" != "$tmp" ] && return 1
+    [ "${s//:}" != "$s" ] && return 1
+    [ "${s/\/}" != "$s" ] && return 1
+    echo "$s"
+}
+legal_list() {
+    local s="$1" tmp
+    printf -v tmp "%q" "$s"
+    [ "$s" != "$tmp" ] && return 1
+    [ "${s/\/}" != "$s" ] && return 1
+    echo "$s"
+}
+if ! (legal_name "$service_name" >/dev/null 2>&1); then
+    echo "Service name must not contain : or shell special characters: '$service_name'" >&2
+    exit 1
+fi
+serviced=$(mktemp -d)
+DEBUG=1
+on_error() {
+    local last_command="$BASH_COMMAND"
+    local last_line="${BASH_LINENO[0]}"
+    local last_src="${BASH_SOURCE[0]}"
+    echo "Error in service $service_name" >&2
+    if (( $DEBUG )); then
+	printf "%s:%s\t%s\n" "$last_src" "$last_line" "$last_command" >&2
+    fi
+    exit 1
+}
+cleanup() {
+   [ -d "$serviced" ] && rm -Rf "$serviced"
+}
+trap cleanup EXIT
+trap on_error ERR
+declare -a services
+
+
+get_min() {
+    local val="$1"
+    if [ -n "$2" ]; then
+	if [ -z "$val" ]; then
+	    val="$2"
+	elif (( ${val} > "$2" )); then
+	    val="$2"
+	fi
+    fi
+}
+get_max() {
+    local val="$1"
+    if [ -n "$2" ]; then
+	if [ -z "$val" ]; then
+	    val="$2"
+	elif (( ${val} < "$2" )); then
+	    val="$2"
+	fi
+    fi
+}
+check_legal() {
+    local val="$1"
+    local check="$2"
+    local signal_err="$3"
+    echo "$check"
+    if [ -z "$check" ] || [ "${val}" != "$check" ]; then
+	if [ "${signal_err}" ]; then
+	    case "${signal_err}" in
+		0 | [fF]*)
+		    :
+		    ;;
+		*)
+		    exit 1
+		    ;;
+	    esac
+	fi
+    fi
+}
+
+int_re='/^[-+]?[0-9]+/ { h ; s/^([-+]?[0-9]+).*$/\1/ ; p ; q } ; q'
+pos_int_re='/^[0-9]+/ { h ; s/^([0-9]+).*$/\1/ ; p ; q } ; q'
+
+check_integer() {
+    local val="$1"
+    local min="$2"
+    local max="$3"
+    shift 3
+    local signal_err="$@"
+    [ "$val" ] || return;
+    local check="$(printf "%s" "$val" |
+    	  	   sed -nzEe "$int_re" |
+		   tr -d '\000')"    
+    val="$(check_legal "$val" "$check" $signal_err)" || exit #?
+    val="$(get_max "$val" "$min")"
+    val="$(get_min "$val" "$max")"
+    echo "${val}"
+}
+
+check_positive_integer() {
+    local val="$1"
+    local max="$2"
+    shift 2
+    local signal_err="$@"
+    [ "$val" ] || return;
+    local check="$(printf "%s" "$val" |
+    	  	   sed -nzEe "$pos_int_re" |
+		   tr -d '\000')"
+    val="$(check_legal "$val" "$check" $signal_err)" || exit #?
+    val="$(get_min "$val" "$max")"
+    return ${val}
+    
+}
+
+check_path() {
+    local tmp
+    local base="$1"
+    local full="$2"
+    local desc="$3"
+    tmp="$(realpath --relative-base="$(realpath "${base}")" "$full")"
+    case "$tmp" in
+	/*)
+	    echo "Illegal ${desc} file name: $full" >&2
+	    exit 1
+	    ;;
+    esac
+    echo "$tmp"
+}
+
+check_file_exists() {
+    local fname="$1"
+    if [ \! -e "$fname" ] || [ \! -f "$fname" ]; then
+	echo "File '$fname' does not exist or is not a regular file" >&2
+	exit 1
+    fi
+}
+
+check_system_posint() {
+    local tmp
+    local given="$1"
+    local name="$2"
+    tmp="$(check_positive_integer "${given}" "" 1)" || {
+	echo "$name limit must be positive integer, given: '$given'" >&2
+	exit 1
+    }
+    echo "$tmp"
+}
+check_system_int() {
+    local tmp
+    local given="$1"
+    local name="$2"
+    local min="$3"
+    local max="$4"
+    if ! tmp="$(check_integer "${given}" "$min" "$max" 1)"; then
+	echo "System $name limit must be integer, given: '$given'" >&2
+	exit 1
+    fi
+    if [ "$tmp" -ne "$given" ]; then
+	echo "System $name limit must be between '$min' and '$max', given: '$given'" >&2
+	exit 1
+    fi
+    echo "$tmp"
+}
+available_services() {
+    local -a svcs
+    local tmp
+    for s in $(ls "$service_dir" | grep -v '.service$'); do
+	! [ -f "$s" ] && continue
+	! [ -x "$s" ] && continue
+	printf -v tmp "%q" "$s"
+	if [ "$tmp" != "$s" ] || [ "${s//:}" != "$s" ] ; then
+	    echo "Warning: discarding service '$s' due to illegal characters in name" >&2
+	    continue
+	fi
+  	svcs[${#$svcs[@]}]="$s"
+    done
+    ( IFS=":"; echo "${svcs[*]}" )
+}
+list_add_elt() {
+    local elt="$1"
+    local ls="$2"
+    local tmp
+    #  Ensure we never have any potential problems
+    printf -v tmp "%q" "$elt"
+    if [ -z "$s" ] ||
+	   [ "$tmp" != "$elt" ] ||
+	   [ "${elt//:}" != "$elt" ] ; then
+	echo "Warning: discarding '$s' due to containing either no or illegal characters" >&2
+	echo "$ls"
+	return
+    fi
+  
+    case "$ls" in
+	"$elt":* | *:"$elt" | *:"$elt":* | "$elt")
+	    :
+	    ;;
+	*)
+	    ls="${ls}${ls:+:}$elt"
+	    ;;
+    esac
+    echo "$ls"
+}
+list_member() {
+    local elt="$1"
+    local ls="$2"
+    case ls in
+	"$elt":* | *:"$elt" | *:"$elt":* | "$elt")
+	    echo -n "$elt"
+	    return 0
+	    ;;
+	*)
+	    return 1
+	    ;;
+    esac
+    # should not happen
+    return 1
+}
+
+
+check_services() {
+    local allowed="$1"
+    local excluded="$2"
+    local s ls=""
+    if [ -z "$allowed" ]; then
+	allowed="$(available-services)"
+    fi
+    for s in ${allowed//:/ }; do
+	list_member "$s" "$excluded" || continue
+	ls="$(list_add_elt "$s" "$ls")"
+    done
+    echo "$ls"
+}
+
+# these values may be set by the system configuration file
+system_cpu_limit=""
+system_memory_limit=""
+system_stack_limit=""
+system_file_size_limit=""
+system_table_size_limit=""
+system_table_lines_limit=""
+system_template_size_limit=""
+system_allowed_services=""
+system_excluded_services=""
+
+system_config="/etc/obs/service/$service_name"
+if [ -e "$system_config" ]; then
+    . "$system_config"
+fi
+# Make sure the system defaults are legal
+system_cpu_limit="$(check_system_posint "${system_cpu_limit}" "CPU")"
+system_memory_limit="$(check_system_posint "${system_memory_limit}" "memory")"
+system_stack_limit="$(check_system_posint "${system_stack_limit}" "stack")"
+system_file_size_limit="$(check_system_posint "${system_file_size_limit}" "file size")"
+system_table_size_limit="$(check_system_posint "${system_table_size_limit}" "table size")"
+system_table_lines_limit="$(check_system_posint "${system_table_lines_limit}" "table lines")"
+system_template_size_limit="$(check_system_posint "${system_template_size_limit}" "template size")"
+system_allowed_services="$(legal_list "${system_allowed_services}")"
+system_excluded_services="$(legal_list "${system_allowed_services}")"
+system_excluded_services="$(list_add_elt "$service_name" "$system_excluded_services")"
+script=""
+infile=""
+outfile=""
+outdir=""
+template_file="$(mktemp -p $serviced)"
+syntax_flag="-E"
+noprint_flag=""
+null_flag=""
+wrap_flag=""
+missing_input="fail"
+cpu_limit=""
+memory_limit=""
+stack_limit=""
+file_size_limit=""
+priority_limit=""
+script_size_limit=""
+mode="script"
+svc=""
+allowed_services=""
+excluded_services=""
+
+declare -a tmpls tmpl_svcs tmpl_tps
+
+while [ $# -gt 0 ]; do
+    case $1 in
+    	--service)
+	    svc="$2"
+	    if ! legal_name "$svc"; then
+		echo "Illegal service name requested '$svc'" >&2
+		exit 1
+	    fi
+	    ;;
+	--template-file)
+	    if [ -z "$svc" ]; then
+		echo "A service must be specified prior to any template" >&2
+		exit 1
+	    fi
+	    tmp="$(check_path "$(pwd)" "$2" "template")"
+	    printf "$s %s %q\n" "$svc" "file" "$tmp" >>"$template_file"
+	    ;;
+	--template)
+	    if [ -z "$svc" ]; then
+		echo "A service must be specified prior to any template" >&2
+		exit 1
+	    fi
+	    tmp="$(mktemp -p $serviced)"
+	    printf "%s\n" "$2" >"$tmp"
+	    printf "$s %s %q\n" "$svc" "expr" "$tmp" >>"$template_file"
+	    ;;
+	--table)
+	    tmp="$(check_path "$(pwd)" "$2" "table file")"
+	    infile="$tmp"
+	    ;;
+	--out)
+	    outfile="${2}"
+	    ;;
+	--cpu-limit)
+	    cpu_limit="$(check_positive_integer "$2" "${system_memory_limit}")" 
+	    ;;
+	--memory-limit)
+	    memory_limit="$(check_positive_integer "$2" "${system_memory_limit}")" 
+	    ;;
+	--stack-limit)
+	    stack_limit="$(check_positive_integer "$2" "${system_stack_limit}")" 
+	    ;;
+	--file-size-limit)
+	    file_size_limit="$(check_positive_integer "$2" "${system_file_size_limit}")"
+	    ;;
+	--table-size-limit)
+	    table_size_limit="$(check_positive_integer "$2" "${system_table_size_limit}")"
+	    ;;
+	--table-lines-limit)
+	    table_lines_limit="$(check_positive_integer "$2" "${system_table_lines_limit}")"
+	    ;;
+	--template-size-limit)
+	    template_size_limit="$(check_positive_integer "$2" "${system_template_size_limit}")"
+	    ;;
+	--excluded_services)
+	    tmp="$(legal_name "$2")"
+	    if [ -z "$tmp" ]; then
+		echo "Illegal excluded service name $2, aborting" >&2
+		exit 1
+	    fi
+	    excluded_services="$(list_add_elt "$tmp" "$excluded_services")"
+	    ;;
+	--outdir)
+	    outdir="$2"
+	    ;;
+	*)
+	    echo "Unrecognized option(s) '$@'" >&2
+	    exit 1
+	    ;;
+    esac
+    shift 2
+done
+
+if [ -z "$infile" ]; then
+    echo "No table was specified, aborting" >&2
+    exit 1
+fi
+check_file_exists "$infile"
+if [ "$missing_input" = "fail" ]; then
+fi
+if [ -z "$outdir" ]; then
+    echo "Output directory name must be specified!" >&2
+    exit 1
+fi
+if [ -z "$outfile" ]; then
+   outfile="$infile"
+fi
+outpath="${outdir}/${outfile}"
+outpath="$(check_path "$outdir" "$outpath" "output")"
+tmp="$(dirname "${outpath}")"
+mkdir -p "$tmp"
+if [ \! -d "$tmp" ]; then
+    echo "Destination directory for $outfile in $outdir does not exist and could not be created" >&2
+    exit 1
+fi
+# Set up allowed/excluded service
+tmp="$excluded_services"
+excluded_services="${system_excluded_services}"
+for x in ${tmp/:/ }; do
+    excluded_services="$(list_add_elt "$x" "$excluded_services")"
+done
+allowed_services="$(check_services "$system_allowed_services" "$excluded_services")"
+# Verify all file size limits are obeyed
+if [ "$table_size_limit" ]; then
+    lim=$(( ${table_size_limit} * 1024 ))
+    if (( $(stat %s "$infile") > $lim )); then
+	echo "Table file is larger than allowed limit $lim, aborting" >&2
+	exit 1
+    fi
+fi
+if [ "$table_lines_limit" ]; then
+    if (( $(wc -l "$infile") > $lim )); then
+	echo "Table file has more lines than allowed limit $lim, aborting" >&2
+	exit 1
+    fi
+fi
+# set up template variables recorded in $template_file
+exec 10<&0
+exec <"${template_file}"
+
+i=0
+while read s tp tf; do
+    (( i++ ))
+    tmpls[${#tmpl_svcs[@]}]="$tf"
+    tmpl_tps[${#tmpl_svcs[@]}]="$tp"
+    tmpl_svcs[${#tmpl_svcs[@]}]="$s"
+    if ! list_member "$s" "$allowed_services"; then
+	echo "Service $s is either not available or not allowed" >&2
+	exit 1
+    fi
+    tfp="$(realpath "$tf")"
+    if [ "$template_size_limit" ]; then
+	if (( $(stat -c %s "$tfp") >
+	      ( $template_size_limit * 1024 ) )); then
+	    if [ "$tp" = "file" ]; then
+		echo "Template file $tf is larger than limit $template_size_limit kB" >&2
+	    else
+		echo "Template $i is larger than limit $template_size_limit kB" >&2
+	    fi
+	    exit 1
+	fi
+    fi
+done
+exec <&10
+exec 10<&-
+
+N=${#tmpls[@]}
+for (( i=0; i < N ; i++ )); do
+    x="${exprs[$i]}"
+    xtp="${expr_tps[$i]}"
+    tp="$(stat %F "$x")"
+    if [ tp != "regular file" ]; then
+	echo "Script $x is not a regular file, aborting" >&2
+	exit 1
+    fi
+    sz="$(stat %s "$x")"
+    if (( $lim > 0 && $sz > $lim )); then
+	case "$xtp" in
+	    file)
+		echo "Script file $x exceeds limit of $script_size_limit kB" >&2
+		;;
+	    expr)
+		echo "Script expression $i  exceeds limit of $script_size_limit kB" >&2
+		;;
+	    *)
+		echo "Should never get here" >&2
+		;;
+	esac
+	exit 1
+    fi
+    if [ "$outpath" = "$x" ]; then
+	echo "Output file $outfile is specified as script expression $i - aborting" >&2
+	exit 1
+    fi
+done
+ulimit_flags=""
+if [ "$cpu_limit" ]; then
+    ulimit_flags="$ulimit_flags -t $cpu_limit"
+fi
+if [ "$memory_limit" ]; then
+    ulimit_flags="$ulimit_flags -m $memory_limit"
+fi
+if [ "$stack_limit" ]; then
+    ulimit_flags="$ulimit_flags -s $stack_limit"
+fi
+if [ "$file_size_limit" ]; then
+    ulimit_flags="$ulimit_flags -f $file_size_limit"
+fi
+

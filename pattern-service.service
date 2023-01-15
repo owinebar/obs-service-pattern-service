@@ -1,0 +1,69 @@
+<service name="pattern-service">
+  <summary>Run sequence of services based on table in text file</summary>
+  <description>This service parses each line of the specified text file into fields.
+  	       The values of those fields are assigned to positional parameters $1, $2, etc
+	       Occurences of these positional parameters in the template argument are replace by
+	       the assigned values to generate a service XML element that is then executed as
+	       if it appeared in the _service file.
+	       Generating a pattern-service is not allowed.
+	       No service is allowed to generate a _service file or to replace the table file.
+	       </description>
+  <parameter name="service">
+    <description>The type of service being generated.  If specified multiple times, each appearance will
+    		     be the service for the following template and template-file parameters until
+		     the end of parameters or another service is specified
+                 "pattern-service" is not allowed as a value.</description>
+    <required/>
+  </parameter>
+  <parameter name="template">
+    <description>The sequence of param XML elements that will appear in the service entry.
+    		 This parameter may be supplied multiple times for a given service.</description>
+  </parameter>
+  <parameter name="template-file">
+    <description>A file containing a template as described above
+    		 This parameter may be supplied multiple times for a given service.</description>
+  </parameter>
+  <parameter name="table-lines-limit">
+    <description>.The maximum number of lines allowed in a table.
+    		  If the host has configured a limit, the limit will be the minimum of the two.
+		  The default is no limit.
+  </parameter>
+  <parameter name="table-size-limit">
+    <description>.The maximum size of the table file in kB.
+    		  If the host has configured a limit, the limit will be the minimum of the two.
+		  The default is no limit.
+  </parameter>
+  <parameter name="template-size-limit">
+    <description>.The maximum size of a template in kB.
+    		  If the host has configured a limit, the limit will be the minimum of the two.
+		  The default is no limit.
+  </parameter>
+  <parameter name="cpu-limit">
+    <description>.The limit for cpu time the sed script may consume in seconds
+    		  If the host has configured a limit, the limit will be the minimum of the two.
+		  The default is no limit.
+  </parameter>
+  <parameter name="memory-limit">
+    <description>.The limit for memory the process may use in kB.
+    		  If the host has configured a limit, the limit will be the minimum of the two.
+		  The default is no limit.
+  </parameter>
+  <parameter name="stack-limit">
+    <description>.The limit for the stack size the process may use in kB.
+    		  If the host has configured a limit, the limit will be the minimum of the two.
+		  The default is no limit.
+  </parameter>
+  <parameter name="file-size-limit">
+    <description>.The limit for the total size of all files created in kB.
+    		  If the host has configured a limit, the limit will be the minimum of the two.
+		  The default is no limit.
+  </parameter>
+  <parameter name="excluded-service">
+    <description>.A service that is allowed to be generated.
+    	          By default the list consists of "pattern-service".
+		  The host may configure additional services to exclude.
+		  Any entry here will be added to the list.
+		  This parameter may be specified multiple times
+  </parameter>
+</service>
+
