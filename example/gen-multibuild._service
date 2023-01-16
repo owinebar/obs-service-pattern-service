@@ -1,0 +1,17 @@
+<services>
+  <service name="pattern-service" mode="trylocal">
+    <param name="table">compilers.tbl</param>
+    <param name="service">sed</param>
+    <param name="template-file">spec-sed-in.srv.tmpl</param>
+    <param name="template-file">spec-sed.srv.tmpl</param>
+  </service>
+  <service name="sed" mode="trylocal">
+    <param name="script">multibuild.sed</param>
+    <param name="file">compilers.tbl</param>
+    <param name="out">_multibuild</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
+  </service>
+</services>

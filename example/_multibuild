@@ -1,0 +1,10 @@
+<multibuild>
+<flavor>emacs-gcc10</flavor>
+<flavor>emacs-gcc11</flavor>
+<flavor>emacs-gcc12</flavor>
+<flavor>emacs-gcc13</flavor>
+<flavor>emacs-clang13</flavor>
+<flavor>emacs-clang14</flavor>
+<flavor>emacs-clang15</flavor>
+<flavor>emacs-clang16</flavor>
+</multibuild>

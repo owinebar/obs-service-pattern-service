@@ -524,8 +524,8 @@ fi
 if [ -z "$outfile" ]; then
    outfile="$infile"
 fi
-outpath="${outdir}/${outfile}"
-outpath="$(check_path "$outdir" "$outpath" "output")"
+# outpath="${outdir}/${outfile}"
+outpath="$(realpath "${outdir}")"
 tmp="$(dirname "${outpath}")"
 mkdir -p "$tmp"
 if [ \! -d "$tmp" ]; then
@@ -676,8 +676,8 @@ while read -a vals; do
 	expand_templates "$(make_tmpl_prog "$quoted_vals[@]")" >>"$svcs_file"
     done
 done
-
 exec <&10
 exec 10<&-
 
+## Now execute the services
 

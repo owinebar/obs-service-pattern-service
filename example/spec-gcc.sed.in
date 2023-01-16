@@ -1,0 +1,82 @@
+%define repocc_vendor ${1}
+%define repocc_version ${2}
+
+Substitute=: gcc-32bit %{repocc}-32bit
+Substitute=: gcc-c++ %{repocc}-c++ 
+Substitute=: gcc-c++-32bit %{repocc}-c++-32bit 
+Substitute=: gcc-d %{repocc}-d
+Substitute=: gcc-d-32bit %{repocc}-d-32bit
+Substitute=: gcc-ada %{repocc}-ada
+Substitute=: gcc-ada-32bit %{repocc}-ada-32bit
+Substitute=: libstdc++6 libstdc++6-%{repocc}
+Substitute=: libstdc++6-devel libstdc++6-devel-%{repocc}
+Substitute=: libgccjit libgccjit0-%{repocc}
+Substitute=: libgccjit-devel libgccjit0-devel-%{repocc}
+Substitute=: gcc %{repocc}
+Ignore: libgcc_s%{libgcc_s}-%{repocc}
+
+Substitute: libgcc_s%{libgcc_s}-%{repocc} libgcc_s%{libgcc_s}
+Substitute: repocc %{repocc}
+Substitute: gcc-PIE %{repocc}-PIE
+Substitute: gcc-32bit %{repocc}-32bit
+Substitute: gcc-c++ %{repocc}-c++ 
+Substitute: gcc-c++-32bit %{repocc}-c++-32bit 
+Substitute: gcc-d %{repocc}-d
+Substitute: gcc-d-32bit %{repocc}-d-32bit
+Substitute: gcc-ada %{repocc}-ada
+Substitute: gcc-ada-32bit %{repocc}-ada-32bit
+Substitute: libstdc++6 libstdc++6-%{repocc}
+Substitute: libstdc++6-devel libstdc++6-devel-%{repocc}
+Substitute: libgcc_s%{libgcc_s} libgcc_s%{libgcc_s}-%{repocc}=
+Substitute: libgomp%{libgomp_sover} libgomp%{libgomp_sover}-%{repocc}=
+Substitute: libasan%{libasan_sover} libasan%{libasan_sover}-%{repocc}=
+Substitute: libtsan%{libtsan_sover} libtsan%{libtsan_sover}-%{repocc}=
+Substitute: libhwasan%{libhwasan_sover} libhwasan%{libhwasan_sover}-%{repocc}=
+Substitute: libatomic%{libatomic_sover} libatomic%{libatomic_sover}-%{repocc}=
+Substitute: libitm%{libitm_sover} libitm%{libitm_sover}-%{repocc}=
+Substitute: liblsan%{liblsan_sover} liblsan%{liblsan_sover}-%{repocc}=
+Substitute: libubsan%{libubsan_sover} libubsan%{libubsan_sover}-%{repocc}=
+Substitute: libvtv%{libvtv_sover} libvtv%{libvtv_sover}-%{repocc}=
+Substitute: libgphobos%{libgdruntime_sover} libgphobos%{libgdruntime_sover}-%{repocc}=
+Substitute: libgphobos%{libgdruntime_sover}-32bit libgphobos%{libgdruntime_sover}-%{repocc}-32bit=
+Substitute: libgphobos%{libgdruntime_sover}-64bit libgphobos%{libgdruntime_sover}-%{repocc}-64bit=
+Substitute: libgdruntime%{libgdruntime_sover} libgdruntime%{libgdruntime_sover}-%{repocc}=
+Substitute: libgdruntime%{libgdruntime_sover}-32bit libgdruntime%{libgdruntime_sover}-%{repocc}-32bit=
+Substitute: libgdruntime%{libgdruntime_sover}-64bit libgdruntime%{libgdruntime_sover}-%{repocc}-64bit=
+Substitute: libcilkrts%{libcilkrts_sover}  libcilkrts%{libcilkrts_sover}-%{repocc}=
+Substitute: liblsan%{liblsan_sover} liblsan%{liblsan_sover}-%{repocc}=
+Substitute: libmpx%{libmpx_sover} libmpx%{libmpx_sover}-%{repocc}=
+Substitute: libmpxwrappers%{libmpxwrappers_sover} libmpxwrappers%{libmpxwrappers_sover}-%{repocc}=
+Substitute: libcilkrts%{libcilkrts_sover} libcilkrts%{libcilkrts_sover}-%{repocc}=
+Substitute: libmpx%{libmpx_sover}  libmpx%{libmpx_sover} -%{repocc}=
+Substitute: libmpxwrappers%{libmpxwrappers_sover} libmpxwrappers%{libmpxwrappers_sover}-%{repocc}=
+Substitute: libgccjit libgccjit%{libgccjit_sover}-%{repocc}
+Substitute: libgccjit-devel libgccjit%{libgccjit_sover}-devel-%{repocc}
+Substitute: gcc %{repocc}
+%define repo_cc gcc-%{repocc_version}
+%define repo_cxx g++-%{repocc_version}
+%define repo_d gdc-%{repocc_version}
+%elif "%{repocc_vendor}" == "clang"
+Substitute: repocc %{repocc}
+Substitute: libstdc++6 libc++1
+Substitute: libstdc++6-devel libc++1-devel
+Substitute: gcc-d ldc
+Macros:
+%define repo_cc clang-%{repocc_version}
+%define repo_cxx clang++-%{repocc_version}
+%define repo_d ldc
+:Macros
+
+%endif
+%endif
+
+
+%if "%{repocc_vendor}" == "gcc"
+%if 0%{?repocc_version} > 9
+%define with_nativecomp 1
+%define with_nativecompaot 1
+%endif
+%endif
+%elif "%{repocc_vendor}" == "clang"
+%endif
+

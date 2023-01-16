@@ -1,0 +1,15 @@
+%define repocc_vendor ${1}
+%define repocc_version ${2}
+
+%define repocc %{repocc_vendor}%{repocc_version}
+Substitute: repocc %{repocc}
+Substitute: libstdc++6 libc++1
+Substitute: libstdc++6-devel libc++1-devel
+Substitute: gcc-d ldc
+%define repo_cc clang-%{repocc_version}
+%define repo_cxx clang++-%{repocc_version}
+%define repo_d ldc
+
+%define customcc_pkg_suffix -%{repocc_vendor}%{repocc_version}
+
+

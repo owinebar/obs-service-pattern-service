@@ -1,0 +1,14 @@
+expression <<EOF
+s/@REPOCC_VENDOR@/${1}/g
+s/@REPOCC_VERSION@/${2}/g
+p
+EOF
+script spec-header.sed
+script spec-sed.sed
+file ${3}
+out ${4}
+mode pipe
+default-print off
+null-data off
+syntax extended
+missing-input fail

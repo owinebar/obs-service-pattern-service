@@ -1,0 +1,9 @@
+gcc 10 spec-gcc.sed.in spec-gcc-10.sed emacs-gcc10.spec
+gcc 11 spec-gcc.sed.in spec-gcc-11.sed emacs-gcc11.spec
+gcc 12 spec-gcc.sed.in spec-gcc-12.sed emacs-gcc12.spec
+gcc 13 spec-gcc.sed.in spec-gcc-13.sed emacs-gcc13.spec
+clang 13 spec-clang.sed.in spec-clang-13.sed emacs-clang13.spec
+clang 14 spec-clang.sed.in spec-clang-14.sed emacs-clang14.spec
+clang 15 spec-clang.sed.in spec-clang-15.sed emacs-clang15.spec
+clang 16 spec-clang.sed.in spec-clang-16.sed emacs-clang16.spec
+
