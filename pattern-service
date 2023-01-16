@@ -8,62 +8,189 @@ if [ "$service_name" = "bash" ]; then
     exit 1
 fi
 #  See regexp-quote.sed for readable,commented version
-requote_sed=$'x;z;x;: loop; t clear1; : clear1;s~^([^[@.?*()|+{}#$\\]*)$~\\1~; t returnEOL;s~^([^[@.?*()|+{}#$\\]+)~\\1\\n~; t accumulate;s~^([[@.?*()|+{}#$\\])~\\\\\\1\\n~; t accumulate;b nomatcherr;: accumulate;x;G;s/^([^\\n]*)\\n([^\\n]+)\\n/\\1\\2\\n/;h;s/^([^\\n]+)\\n(.*)/\\1/;x;s/^([^\\n]+)\\n(.*)/\\2/;b loop;: returnEOL;H;x;s/^([^\\n]+)\\n/\\1/;p;d;: nomatcherr;= ; a Impossible non-match\nq'
-sub_prog1=''
-sub_prog1+=$'/$|\\/ {\n'
-sub_prog1+=$'x;z;x\n'
-sub_prog1+=$': findnextsub\n'
-sub_prog1+=$'t clear1;: clear1\n'
-sub_prog1+=$'s/^([^$]*)$/1/ ; t returnEOL\n'
-sub_prog1+=$'s/^([^$]+)/1n/; t accumulate\n'
-sub_prog1+=$'s/^\\\\/\\n/ ; t accumulate\n'
-sub_prog1+=$'s/^\\$/$n/ ; t accumulate\n'
-sub_prog1+=$'s/^\\/\\n/ ; t accumulate\n'
-sub_prog1+=$'s/^${([1-9][0-9]*)}/1n/ ; t substitute\n'
-sub_prog1+=$'s/^$/$n/ ; t accumulate\n'
-sub_prog1+=$'b nomatcherr\n'
-sub_prog1+=$':substitute\n'
+requote_prog=""
+requote_prog+=$'# Initialize hold space\n'
+requote_prog+=$'x;z;x\n'
+requote_prog+=$': loop\n'
+requote_prog+=$'t clear1; : clear1\n'
+requote_prog+=$'s~^([^[@.?*()|+{}#$\\]*)$~\\1~; t returnEOL\n'
+requote_prog+=$'s~^([^[@.?*()|+{}#$\\]+)~\\1\\n~; t accumulate\n'
+requote_prog+=$'# First character must be special\n'
+requote_prog+=$'s~^([[@.?*()|+{}#$\\])~\\\\\\1\\n~; t accumulate\n'
+requote_prog+=$'b nomatcherr\n'
+requote_prog+=$': accumulate\n'
+requote_prog+=$'# First line of pattern space contains text to accumulate\n'
+requote_prog+=$'# second line contains unprocessed text\n'
+requote_prog+=$'# hold space contains processed text\n'
+requote_prog+=$'x\n'
+requote_prog+=$'G\n'
+requote_prog+=$'s/^([^\\n]*)\\n([^\\n]+)\\n/\\1\\2\\n/\n'
+requote_prog+=$'h\n'
+requote_prog+=$'s/^([^\\n]+)\\n(.*)/\\1/\n'
+requote_prog+=$'x\n'
+requote_prog+=$'s/^([^\\n]+)\\n(.*)/\\2/\n'
+requote_prog+=$'b loop\n'
+requote_prog+=$': returnEOL\n'
+requote_prog+=$'H\n'
+requote_prog+=$'x\n'
+requote_prog+=$'s/^([^\\n]+)\\n/\\1/\n'
+requote_prog+=$'p\n'
+requote_prog+=$'d\n'
+requote_prog+=$': nomatcherr\n'
+requote_prog+=$'= ; a Impossible non-match\n'
+requote_prog+=$'Q 1\n'
+sub_prog1=""
+sub_prog1+=$'\n'
+sub_prog1+=$'# only care about lines with a possible substitution\n'
+sub_prog1+=$'/\\$|\\\\/ {\n'
+sub_prog1+=$'    # Initialize hold space\n'
+sub_prog1+=$'    x;z;x\n'
+sub_prog1+=$'    : findnextsub\n'
+sub_prog1+=$'    t clear1\n'
+sub_prog1+=$'    : clear1\n'
+sub_prog1+=$'    # if we are at the end of the line\n'
+sub_prog1+=$'    # clean up and restart cycle\n'
+sub_prog1+=$'    s/^([^\\$]*)$/\\1/ ; t returnEOL\n'
+sub_prog1+=$'    # Otherwise if there are non-control chars, accumulate \n'
+sub_prog1+=$'    s/^([^\\$]+)/\\1\\n/; t accumulate\n'
+sub_prog1+=$'    # Must have a control sequence at the head\n'
+sub_prog1+=$'    s/^\\\\\\\\/\\\\\\n/ ; t accumulate\n'
+sub_prog1+=$'    s/^\\\\\\$/\\$\\n/ ; t accumulate\n'
+sub_prog1+=$'    s/^\\\\/\\\\\\n/ ; t accumulate\n'
+sub_prog1+=$'    s/^\\$\\{([1-9][0-9]*)\\}/\\1\\n/ ; t substitute\n'
+sub_prog1+=$'    s/^\\$/\\$\\n/ ; t accumulate\n'
+sub_prog1+=$'    # should be impossible\n'
+sub_prog1+=$'    b nomatcherr\n'
+sub_prog1+=$'    :substitute\n'
 # Commands of the form
 # s#<number>#<re-quoted replacement text>#g
 # go here, for each positional parameter assigned a value by the table
 sub_prog2=""
-sub_prog2+=$'s/^[^n]+n//\n'
+sub_prog2+=$'    # if not matched, provide empty value\n'
+sub_prog2+=$'    s/^[^\\n]+\\n//\n'
+sub_prog2+=$'    b findnextsub\n'
+sub_prog2+=$'    s@(.)@\\1\\n@\n'
+sub_prog2+=$'    s~^(\\[|[@.?*()|+{}/\\$\\\\])~\\\\\\1~\n'
+sub_prog2+=$'    x\n'
+sub_prog2+=$'    G\n'
+sub_prog2+=$'    s/^([^\\n]*)\\n([^\\n]*)\\n/\\1\\2\\n/\n'
+sub_prog2+=$'    h\n'
+sub_prog2+=$'    s/^([^\\n]+)\\n.*/\\1/\n'
+sub_prog2+=$'    x\n'
+sub_prog2+=$'    s/^[^\\n]+\\n(.*)/\\1/\n'
+sub_prog2+=$'    b findnextsub\n'
+sub_prog2+=$'\n'
+sub_prog2+=$'    : accumulate\n'
+sub_prog2+=$'    # First line of pattern space contains text to accumulate\n'
+sub_prog2+=$'    # second line contains unprocessed text\n'
+sub_prog2+=$'    # hold space contains processed text\n'
+sub_prog2+=$'    x\n'
+sub_prog2+=$'    G\n'
+sub_prog2+=$'    s/^([^\\n]*)\\n([^\\n]+)\\n/\\1\\2\\n/\n'
+sub_prog2+=$'    h\n'
+sub_prog2+=$'    s/^([^\\n]+)\\n(.*)/\\1/\n'
+sub_prog2+=$'    x\n'
+sub_prog2+=$'    s/^([^\\n]+)\\n(.*)/\\2/\n'
+sub_prog2+=$'    b findnextsub\n'
+sub_prog2+=$'    \n'
+sub_prog2+=$'    : returnEOL\n'
+sub_prog2+=$'    H\n'
+sub_prog2+=$'    x\n'
+sub_prog2+=$'    s/^([^\\n]+)\\n/\\1/\n'
+sub_prog2+=$'    p\n'
+sub_prog2+=$'    d\n'
+sub_prog2+=$'    : nomatcherr\n'
+sub_prog2+=$'    = ; a Impossible non-match\n'
+sub_prog2+=$'    q\n'
+sub_prog2+=$'}\n'
+
+sub_prog2=""
+sub_prog2+=$'s/^[^\\n]+\\n//\n'
 sub_prog2+=$'b findnextsub\n'
-sub_prog2+=$'s@(.)@1n@\n'
+sub_prog2+=$'s@(.)@\\1\\n@\n'
 sub_prog2+=$'s~^([|[@.?*()|+{}/$\\])~\\1~\n'
 sub_prog2+=$'x\n'
 sub_prog2+=$'G\n'
-sub_prog2+=$'s/^([^n]*)n([^n]*)n/12n/\n'
+sub_prog2+=$'s/^([^\\n]*)\\n([^\\n]*)\\n/\\1\\2\\n/\n'
 sub_prog2+=$'h\n'
-sub_prog2+=$'s/^([^n]+)n.*/1/\n'
+sub_prog2+=$'s/^([^\\n]+)\\n.*/\\1/\n'
 sub_prog2+=$'x\n'
-sub_prog2+=$'s/^[^n]+n(.*)/1/\n'
+sub_prog2+=$'s/^[^\\n]+\\n(.*)/\\1/\n'
 sub_prog2+=$'b findnextsub\n'
 sub_prog2+=$'\n'
 sub_prog2+=$': accumulate\n'
 sub_prog2+=$'x\n'
 sub_prog2+=$'G\n'
-sub_prog2+=$'s/^([^n]*)n([^n]+)n/12n/\n'
+sub_prog2+=$'s/^([^\\n]*)\\n([^\\n]+)\\n/\\1\\2\\n/\n'
 sub_prog2+=$'h\n'
-sub_prog2+=$'s/^([^n]+)n(.*)/1/\n'
+sub_prog2+=$'s/^([^\\n]+)\\n(.*)/\\1/\n'
 sub_prog2+=$'x\n'
-sub_prog2+=$'s/^([^n]+)n(.*)/2/\n'
+sub_prog2+=$'s/^([^\\n]+)\\n(.*)/\\2/\n'
 sub_prog2+=$'b findnextsub\n'
 sub_prog2+=$': returnEOL\n'
 sub_prog2+=$'H\n'
 sub_prog2+=$'x\n'
-sub_prog2+=$'s/^([^n]+)n/1/\n'
+sub_prog2+=$'s/^([^\\n]+)\\n/\\1/\n'
 sub_prog2+=$'p\n'
 sub_prog2+=$'d\n'
 sub_prog2+=$': nomatcherr\n'
 sub_prog2+=$'= ; a Impossible non-match\n'
 sub_prog2+=$'q\n'
 sub_prog2+=$'}\n'
+tmpl_prog=""
+tmpl_prog+=$'/^\\w+(\\s|$)/ {\n'
+tmpl_prog+=$'    t clear0; : clear0\n'
+tmpl_prog+=$'    h\n'
+tmpl_prog+=$'    s/^(\\w+)(\\s.*)?$/<param name="\\1">/ ; t validname\n'
+tmpl_prog+=$'    Q 1\n'
+tmpl_prog+=$'    : validname\n'
+tmpl_prog+=$'    x\n'
+tmpl_prog+=$'    s/^(\\S+)\\s+(\\S.*)$/\\2/\n'
+tmpl_prog+=$'    # Do not allow tricks with XML tags\n'
+tmpl_prog+=$'    \\#</(param|service)# Q 1\n'
+tmpl_prog+=$'    t clear1\n'
+tmpl_prog+=$'    : clear1\n'
+tmpl_prog+=$'    s/<<EOF\\s*$//; t EOFloop\n'
+tmpl_prog+=$'    # else whatever is left on the line is the value of the parameter\n'
+tmpl_prog+=$'    H\n'
+tmpl_prog+=$'    b EOFreturn\n'
+tmpl_prog+=$'\n'
+tmpl_prog+=$'    : EOFloop\n'
+tmpl_prog+=$'    # take care not to exit sed before closing the parameter block\n'
+tmpl_prog+=$'    $ b EOFreturn\n'
+tmpl_prog+=$'    n\n'
+tmpl_prog+=$'    \\#</(param|service)# Q 1\n'
+tmpl_prog+=$'    t clear2\n'
+tmpl_prog+=$'    : clear2\n'
+tmpl_prog+=$'    s#^EOF$## ; t EOFreturn\n'
+tmpl_prog+=$'    H\n'
+tmpl_prog+=$'    b EOFloop\n'
+tmpl_prog+=$'\n'
+tmpl_prog+=$'    : EOFreturn\n'
+tmpl_prog+=$'    x\n'
+tmpl_prog+=$'    s#\\\'#</param>#\n'
+tmpl_prog+=$'    # remove the first newline after <param name="..">\n'
+tmpl_prog+=$'    s#^([^\\n]*)\\n#\\1#\n'
+tmpl_prog+=$'    p\n'
+tmpl_prog+=$'    d\n'
+tmpl_prog+=$'}\n'
+tmpl_prog+=$'# Any other lines are illegal\n'
+tmpl_prog+=$'Q 1\n'
+tmpl_prog+=$'\n'
 
+process_template() {
+    ( shopt -s pipefail;
+      printf "%s\n" "$1" |
+	  sed -Ene "$tmpl_prog" |
+	  head -c -1
+    )
+}
 re_quote() {
-    printf "%s\n" "$1" |
-	sed -Ene "$requote_sed" |
-	head -c -1
+    ( shopt -s pipefail;
+      printf "%s\n" "$1" |
+	  sed -Ene "$requote_prog" |
+	  head -c -1
+    )
 }
 make_sub_prog() {
     local cmds=""
@@ -556,4 +683,63 @@ fi
 if [ "$file_size_limit" ]; then
     ulimit_flags="$ulimit_flags -f $file_size_limit"
 fi
+
+template_error() {
+    local tp="$1"
+    local tno="$2"
+    local tsrc="$3"
+    local msg="$4"
+    if [ "$tp" = "file" ]; then
+	echo "Error in template ${tsrc}: $msg" >&2
+    else
+	echo "Error in template #${tno}: $msg" >&2
+    fi
+    exit 1
+}
+expand_template() {
+    local svc="$1"
+    local tp="$2"
+    local tmpl="$3"
+    local tmpl_no="$4"
+    local tmpl_src="$5"
+    local prog="$6"
+    local param val
+    exec 20<&0
+    exec <<<"$tmpl"
+    while read param val; do
+	if ! legal_name "$param"; then
+	    template_error "$tp" "$tmpl_no" "$tmpl_src" \
+	    		   "Illegal parameter name '$param'"
+	fi
+    done
+    exec 0<&-    
+    exec <&20
+    exec 20<&-
+}
+expand_templates() {
+    local prog="$1"
+    local i N=${#tmpls[@]}
+    local svc tmpl tp
+    local txt
+    for (( i = 0 ; i < N ; i++ )); do
+	svc="${tmpl_svcs[$i]}"
+	tp="${tmpl_tps[$i]}"
+	tmpl="${tmpls[$i]}"
+	txt="$(expand_template "$svc" "$tp" "$tmpl" "$prog")"
+    done
+}
+if [ "$ulimit_flags" ]; then
+    ulimit ${ulimit_flags}
+fi
+
+exec 10<&0
+exec <"$infile"
+while read -a params; do
+    local prog="$(make_sub_prog "$params[@]")"
+    expand_templates "$prog"
+done
+exec <&-
+exec <&10
+exec 10<&-
+
 

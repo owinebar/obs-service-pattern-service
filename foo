@@ -1,0 +1,5 @@
+all   gabba${4}
+baz <<EOF
+ ${2}foo bar${3} 
+${1}baz ${10}EOF
+EOF
