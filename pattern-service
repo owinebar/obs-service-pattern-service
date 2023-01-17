@@ -292,15 +292,16 @@ check_file_exists() {
 	exit 1
     fi
 }
-
 check_system_posint() {
     local tmp
     local given="$1"
     local name="$2"
-    tmp="$(check_positive_integer "${given}" "" 1)" || {
-	echo "$name limit must be positive integer, given: '$given'" >&2
-	exit 1
-    }
+    if [ "${given}" ]; then
+	tmp="$(check_positive_integer "${given}" "" 1)" || {
+	    echo "$name limit must be positive integer, given: '$given'" >&2
+	    exit 1
+	}
+    fi
     echo "$tmp"
 }
 check_system_int() {
@@ -309,13 +310,15 @@ check_system_int() {
     local name="$2"
     local min="$3"
     local max="$4"
-    if ! tmp="$(check_integer "${given}" "$min" "$max" 1)"; then
-	echo "System $name limit must be integer, given: '$given'" >&2
-	exit 1
-    fi
-    if [ "$tmp" -ne "$given" ]; then
-	echo "System $name limit must be between '$min' and '$max', given: '$given'" >&2
-	exit 1
+    if [ "${given}" ]; then
+	if ! tmp="$(check_integer "${given}" "$min" "$max" 1)"; then
+	    echo "System $name limit must be integer, given: '$given'" >&2
+	    exit 1
+	fi
+	if [ "$tmp" -ne "$given" ]; then
+	    echo "System $name limit must be between '$min' and '$max', given: '$given'" >&2
+	    exit 1
+	fi
     fi
     echo "$tmp"
 }
