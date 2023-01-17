@@ -467,7 +467,7 @@ while [ $# -gt 0 ]; do
 	    tmp="$(check_path "$(pwd)" "$2" "table file")"
 	    infile="$tmp"
 	    ;;
-	--out)
+	--services-file)
 	    outfile="${2}"
 	    ;;
 	--cpu-limit)
@@ -522,10 +522,11 @@ if [ -z "$outdir" ]; then
     exit 1
 fi
 if [ -z "$outfile" ]; then
-   outfile="$infile"
+    echo "Services file for generated services must be specified" >&2
+    exit 1
 fi
-# outpath="${outdir}/${outfile}"
-outpath="$(realpath "${outdir}")"
+outpath="${outdir}/${outfile}"
+outpath="$(realpath "${outpath}")"
 tmp="$(dirname "${outpath}")"
 mkdir -p "$tmp"
 if [ \! -d "$tmp" ]; then
@@ -678,6 +679,7 @@ while read -a vals; do
 done
 exec <&10
 exec 10<&-
+cp "$svcs_file" "$outpath"
 
-## Now execute the services
+
 
