@@ -2,7 +2,8 @@
 
 full_service="$(realpath "$0")"
 service_name="$(basename "$0")"
-service_dir="$(dirname "$full_service")"
+#service_dir="$(dirname "$full_service")"
+service_dir=/usr/lib/obs/service
 if [ "$service_name" = "bash" ]; then
     echo "Service name not recognized" >&2
     exit 1
