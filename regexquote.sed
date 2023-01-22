@@ -22,7 +22,7 @@ b loop
 : returnEOL
 H
 x
-s/^([^\n]+)\n/\1/
+s/^([^\n]*)\n/\1/
 p
 d
 : nomatcherr

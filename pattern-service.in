@@ -40,12 +40,11 @@ make_tmpl_prog() {
     done
     local prog="$tmpl_prog1$cmds$tmpl_prog2"
     printf "%s" "$prog"
-    # echo "Template program" >&2
-    # printf "%s\n" "$prog" >&2
 }
 process_template() {
     local prog="$1"  # tmpl_prog
     local progfile="$(mktemp -p $serviced)"
+    printf "%s" "$prog" >"$progfile"
     ssed_file "$2" -f "$progfile"
 }
 re_quote() {
@@ -58,7 +57,7 @@ legal_name() {
     [ "$s" != "$tmp" ] && return 1
     [ "${s//:}" != "$s" ] && return 1
     [ "${s/\/}" != "$s" ] && return 1
-    echo "$s"
+    return 0
 }
 legal_list() {
     local s="$1" tmp
@@ -66,7 +65,6 @@ legal_list() {
     printf -v tmp "%q" "$s"
     [ "$s" != "$tmp" ] && return 1
     [ "${s/\/}" != "$s" ] && return 1
-    echo "$s"
 }
 if ! (legal_name "$service_name" >/dev/null 2>&1); then
     echo "Service name must not contain : or shell special characters: '$service_name'" >&2
@@ -263,7 +261,6 @@ list_member() {
     local ls="$2"
     case "$ls" in
 	"$elt":* | *:"$elt" | *:"$elt":* | "$elt")
-	    echo -n "$elt"
 	    return 0
 	    ;;
 	*)
@@ -312,8 +309,14 @@ system_file_size_limit="$(check_system_posint "${system_file_size_limit}" "file 
 system_table_size_limit="$(check_system_posint "${system_table_size_limit}" "table size")"
 system_table_lines_limit="$(check_system_posint "${system_table_lines_limit}" "table lines")"
 system_template_size_limit="$(check_system_posint "${system_template_size_limit}" "template size")"
-system_allowed_services="$(legal_list "${system_allowed_services}")"
-system_excluded_services="$(legal_list "${system_allowed_services}")"
+if ! legal_list "${system_allowed_services}"; then
+    echo "Allowed services list cannot be processed: '${system_allowed_services}'"
+    exit 1
+fi
+if ! legal_list "${system_excluded_services}"; then
+    echo "Excluded services list cannot be processed: '${system_excluded_services}'"
+    exit 1
+fi
 system_excluded_services="$(list_add_elt "$service_name" "$system_excluded_services")"
 script=""
 infile=""
@@ -353,8 +356,6 @@ while [ $# -gt 0 ]; do
 		exit 1
 	    fi
 	    tmp="$(check_path "$(pwd)" "$2" "template")"
-	    echo "template file $2 => $tmp"
-	    printf "Check '%s' '%s' '%q'\n" "$svc" "file" "$tmp" >&2
 	    printf "%s %s %q\n" "$svc" "file" "$tmp" >>"$template_file"
 	    ;;
 	--template)
@@ -395,8 +396,8 @@ while [ $# -gt 0 ]; do
 	    template_size_limit="$(check_positive_integer "$2" "${system_template_size_limit}")"
 	    ;;
 	--excluded_services)
-	    tmp="$(legal_name "$2")"
-	    if [ -z "$tmp" ]; then
+	    tmp="$2""$(legal_name "$2")"
+	    if ! legal_name "$tmp"; then
 		echo "Illegal excluded service name $2, aborting" >&2
 		exit 1
 	    fi
@@ -456,16 +457,12 @@ if [ "$table_lines_limit" ]; then
 	exit 1
     fi
 fi
-echo "Template file ${template_file}"
-cat ${template_file}
-echo "======="
 # set up template variables recorded in $template_file
 exec 10<&0
 exec <"${template_file}"
 
 i=0
 while read s tp tf; do
-    echo "s=$s tp=$tp tf=$tf"
     tmpls[$i]="$tf"
     tmpl_tps[$i]="$tp"
     tmpl_svcs[$i]="$s"
@@ -551,8 +548,6 @@ expand_template() {
     xml+=$'\n'
     xml+=$'</service>\n'
     printf "%s" "$xml"
-    echo "Expanded Template to:" >&2
-    printf "%s" "$xml" >&2
 }
 
 expand_templates() {
@@ -562,7 +557,6 @@ expand_templates() {
     local txt
     local xml=""
     for (( i = 0 ; i < N ; i++ )); do
-	echo "Expanding template $i" >&2
 	svc="${tmpl_svcs[$i]}"
 	tp="${tmpl_tps[$i]}"
 	tmpl="${tmpls[$i]}"
@@ -583,8 +577,8 @@ re_quote_and_expand_templates() {
 	quoted_values[$j]="$(re_quote "$1")"
 	shift
     done
-    echo "Quoted values: ${quoted_values[@]}" >&2
     local tmpl_prog="$(make_tmpl_prog "${quoted_values[@]}")"
+    # for debugging
     printf "%s" "$tmpl_prog" >"$outdir/template_subst_${tbl_k}.sed"
     expand_templates "$(make_tmpl_prog "${quoted_values[@]}")" >>"$svcs_file"
 }
@@ -592,10 +586,8 @@ re_quote_and_expand_templates() {
 exec 10<&0
 exec <"$infile"
 svcs_file="$(mktemp -p "$serviced")"
-echo "Services File: $svcs_file"
 tbl_line=1
 while read -a vals; do
-    echo "Read values: ${vals[@]}" >&2
     re_quote_and_expand_templates "$tbl_line" "$svcs_file" "${vals[@]}"
     (( ++tbl_line ))
 done

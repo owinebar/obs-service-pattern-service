@@ -8,55 +8,58 @@ if [ "$service_name" = "bash" ]; then
     echo "Service name not recognized" >&2
     exit 1
 fi
-#  See regexp-quote.sed for readable,commented version
-requote_prog=""
-requote_prog+=$'# Initialize hold space\n'
-requote_prog+=$'x;z;x\n'
-requote_prog+=$': loop\n'
-requote_prog+=$'t clear1; : clear1\n'
-requote_prog+=$'s~^([^[@.?*()|+{}#$\\]*)$~\\1~; t returnEOL\n'
-requote_prog+=$'s~^([^[@.?*()|+{}#$\\]+)~\\1\\n~; t accumulate\n'
-requote_prog+=$'# First character must be special\n'
-requote_prog+=$'s~^([[@.?*()|+{}#$\\])~\\\\\\1\\n~; t accumulate\n'
-requote_prog+=$'b nomatcherr\n'
-requote_prog+=$': accumulate\n'
-requote_prog+=$'# First line of pattern space contains text to accumulate\n'
-requote_prog+=$'# second line contains unprocessed text\n'
-requote_prog+=$'# hold space contains processed text\n'
-requote_prog+=$'x\n'
-requote_prog+=$'G\n'
-requote_prog+=$'s/^([^\\n]*)\\n([^\\n]+)\\n/\\1\\2\\n/\n'
-requote_prog+=$'h\n'
-requote_prog+=$'s/^([^\\n]+)\\n(.*)/\\1/\n'
-requote_prog+=$'x\n'
-requote_prog+=$'s/^([^\\n]+)\\n(.*)/\\2/\n'
-requote_prog+=$'b loop\n'
-requote_prog+=$': returnEOL\n'
-requote_prog+=$'H\n'
-requote_prog+=$'x\n'
-requote_prog+=$'s/^([^\\n]+)\\n/\\1/\n'
-requote_prog+=$'p\n'
-requote_prog+=$'d\n'
-requote_prog+=$': nomatcherr\n'
-requote_prog+=$'= ; a Impossible non-match\n'
-requote_prog+=$'Q 1\n'
+####SED_PROGRAMS
+re_quote_prog=""
+re_quote_prog+=$'# Initialize hold space\n'
+re_quote_prog+=$'x;z;x\n'
+re_quote_prog+=$': loop\n'
+re_quote_prog+=$'t clear1; : clear1\n'
+re_quote_prog+=$'s~^([^[@.?*()|+{}#$\\]*)$~\\1~; t returnEOL\n'
+re_quote_prog+=$'s~^([^[@.?*()|+{}#$\\]+)~\\1\\n~; t accumulate\n'
+re_quote_prog+=$'# First character must be special\n'
+re_quote_prog+=$'s~^([[@.?*()|+{}#$\\])~\\\\\\1\\n~; t accumulate\n'
+re_quote_prog+=$'b nomatcherr\n'
+re_quote_prog+=$': accumulate\n'
+re_quote_prog+=$'# First line of pattern space contains text to accumulate\n'
+re_quote_prog+=$'# second line contains unprocessed text\n'
+re_quote_prog+=$'# hold space contains processed text\n'
+re_quote_prog+=$'x\n'
+re_quote_prog+=$'G\n'
+re_quote_prog+=$'s/^([^\\n]*)\\n([^\\n]+)\\n/\\1\\2\\n/\n'
+re_quote_prog+=$'h\n'
+re_quote_prog+=$'s/^([^\\n]+)\\n(.*)/\\1/\n'
+re_quote_prog+=$'x\n'
+re_quote_prog+=$'s/^([^\\n]+)\\n(.*)/\\2/\n'
+re_quote_prog+=$'b loop\n'
+re_quote_prog+=$': returnEOL\n'
+re_quote_prog+=$'H\n'
+re_quote_prog+=$'x\n'
+re_quote_prog+=$'s/^([^\\n]*)\\n/\\1/\n'
+re_quote_prog+=$'p\n'
+re_quote_prog+=$'d\n'
+re_quote_prog+=$': nomatcherr\n'
+re_quote_prog+=$'= ; a Impossible non-match\n'
+re_quote_prog+=$'q\n'
 tmpl_prog1=""
-tmpl_prog1+=$'/^\\w+(\\s|$)/ {\n'
+tmpl_prog1+=$'/^\\w(\\w|[+-])*(\\s|$)/ {\n'
 tmpl_prog1+=$'    t clear0; : clear0\n'
 tmpl_prog1+=$'    h\n'
-tmpl_prog1+=$'    s/^(\\w+)(\\s.*)?$/\\1\\x00/ ; t validname\n'
+tmpl_prog1+=$'    s/^(\\w(\\w|[+-])*)(\\s.*)?$/\\1\\x00/ ; t validname\n'
 tmpl_prog1+=$'    =; i Invalid name\n'
+tmpl_prog1+=$'    p\n'
 tmpl_prog1+=$'    Q 1\n'
 tmpl_prog1+=$'    : validname\n'
 tmpl_prog1+=$'    x\n'
-tmpl_prog1+=$'    s/^(\\w+)\\s+(\\S.*)$/\\2/\n'
+tmpl_prog1+=$'    s/^(\\w(\\w|[+-])*)\\s+(\\S.*)$/\\3/\n'
 tmpl_prog1+=$'    t clear1\n'
 tmpl_prog1+=$'    : clear1\n'
 tmpl_prog1+=$'    s/<<EOF\\s*(\\n|\\\')//; t EOFloop\n'
+tmpl_prog1+=$'    # else whatever is left on the line is the value of the parameter\n'
 tmpl_prog1+=$'    H\n'
 tmpl_prog1+=$'    b gosubst\n'
 tmpl_prog1+=$'\n'
 tmpl_prog1+=$'    : EOFloop\n'
+tmpl_prog1+=$'    # take care not to exit sed before closing the parameter block\n'
 tmpl_prog1+=$'    $ b finishtmpl\n'
 tmpl_prog1+=$'    n\n'
 tmpl_prog1+=$'    t clear2\n'
@@ -67,14 +70,17 @@ tmpl_prog1+=$'    b EOFloop\n'
 tmpl_prog1+=$'    : gosubst\n'
 tmpl_prog1+=$'    z\n'
 tmpl_prog1+=$'    x\n'
-tmpl_prog1+=$'    s#\\`([^\\x00]+)\\x00\\n#\\1\\x00#\n' #`
+tmpl_prog1+=$'    s#\\`([^\\x00]+)\\x00\\n#\\1\\x00#\n'
+tmpl_prog1+=$'    # swap ordering for substitution\n'
 tmpl_prog1+=$'    s#\\`([^\\x00]+)\\x00(.*)\\\'#\\2\\x00\\1#\n'
 tmpl_prog1+=$'    b subst\n'
 tmpl_prog1+=$'    : finishtmpl\n'
+tmpl_prog1+=$'    # Check for illegal xml close tags\n'
 tmpl_prog1+=$'    h\n'
-tmpl_prog1+=$'    s#\\`([^\\x00]+)\\x00(.*)\\\'#\\2#\n'  #`
+tmpl_prog1+=$'    s#\\`([^\\x00]+)\\x00(.*)\\\'#\\2#\n'
 tmpl_prog1+=$'    \\#</(service|param)# {\n'
 tmpl_prog1+=$'	=; i Illegal xml close\n'
+tmpl_prog1+=$'	p\n'
 tmpl_prog1+=$'	Q 2\n'
 tmpl_prog1+=$'    }\n'
 tmpl_prog1+=$'    z; x\n'
@@ -82,7 +88,9 @@ tmpl_prog1+=$'    s#\\`([^\\x00]+)\\x00(.*)\\\'#<param name="\\1">\\2</param>#\n
 tmpl_prog1+=$'    p\n'
 tmpl_prog1+=$'    d\n'
 tmpl_prog1+=$'}\n'
+tmpl_prog1+=$'# Any other lines are illegal\n'
 tmpl_prog1+=$'=; i Unrecognized\n'
+tmpl_prog1+=$'p\n'
 tmpl_prog1+=$'Q 1\n'
 tmpl_prog1+=$'\n'
 tmpl_prog1+=$'\n'
@@ -91,71 +99,97 @@ tmpl_prog1+=$'/\\$|\\\\/ {\n'
 tmpl_prog1+=$'    : findnextsub\n'
 tmpl_prog1+=$'    t clear3\n'
 tmpl_prog1+=$'    : clear3\n'
+tmpl_prog1+=$'    # if we are at the end of text\n'
+tmpl_prog1+=$'    # clean up and restart cycle\n'
 tmpl_prog1+=$'    s/\\`\\x00// ; t joinhold\n'
+tmpl_prog1+=$'    # s/\\`\\n//; t accumulatenl\n'
+tmpl_prog1+=$'    # Otherwise if there are non-control chars, accumulate \n'
 tmpl_prog1+=$'    s/\\`([^\\$\\x00]+)/\\1\\x00/; t accumulate\n'
+tmpl_prog1+=$'    # Must have a control sequence at the head\n'
 tmpl_prog1+=$'    s/\\`\\\\\\\\/\\\\\\x00/ ; t accumulate\n'
 tmpl_prog1+=$'    s/\\`\\\\\\$/\\$\\x00/ ; t accumulate\n'
 tmpl_prog1+=$'    s/\\`\\\\/\\\\\\x00/ ; t accumulate\n'
 tmpl_prog1+=$'    s/\\`\\$\\{([1-9][0-9]*)\\}/\\1\\x00/ ; t substitute\n'
 tmpl_prog1+=$'    s/\\`\\$/\\$\\x00/ ; t accumulate\n'
+tmpl_prog1+=$'    # should be impossible\n'
 tmpl_prog1+=$'    b nomatcherr\n'
 tmpl_prog1+=$'    :substitute\n'
+tmpl_prog1+=$'    # commands of the form\n'
+tmpl_prog1+=$'    # s#\\`<parameter number>\\x00#<replacement text>\\x00#; t accumulate\n'
+tmpl_prog1+=$'####SUBSTITUTIONS\n'
 tmpl_prog2=""
+tmpl_prog2+=$'    # if not matched, provide empty value\n'
 tmpl_prog2+=$'    s/\\`[^\\x00]+\\x00/\\x00/; t accumulate\n'
 tmpl_prog2+=$'    b nomatcherr\n'
 tmpl_prog2+=$'\n'
 tmpl_prog2+=$'    : accumulate\n'
+tmpl_prog2+=$'    # First line of pattern space contains text to accumulate\n'
+tmpl_prog2+=$'    # second line contains unprocessed text\n'
+tmpl_prog2+=$'    # hold space contains processed text\n'
 tmpl_prog2+=$'    s/\\`/\\x00/\n'
 tmpl_prog2+=$'    x\n'
 tmpl_prog2+=$'    G\n'
 tmpl_prog2+=$'    s/\\`([^\\x00]*)\\n\\x00([^\\x00]*)\\x00(.*)\\\'/\\1\\2/\n'
 tmpl_prog2+=$'    x\n'
-tmpl_prog2+=$'    s/\\`\\x00([^\\x00]*)\\x00(.*)\\\'/\\2/\n' #`
+tmpl_prog2+=$'    s/\\`\\x00([^\\x00]*)\\x00(.*)\\\'/\\2/\n'
 tmpl_prog2+=$'    b findnextsub\n'
 tmpl_prog2+=$'\n'
 tmpl_prog2+=$'    : joinhold\n'
 tmpl_prog2+=$'    s/\\\'/\\x00/\n'
 tmpl_prog2+=$'    G\n'
-tmpl_prog2+=$'    s/\\`([^\\x00]*\\x00)\\n/\\1/\n' #`
+tmpl_prog2+=$'    s/\\`([^\\x00]*\\x00)\\n/\\1/\n'
 tmpl_prog2+=$'    x;z;x\n'
 tmpl_prog2+=$'    b finishtmpl\n'
 tmpl_prog2+=$'    \n'
 tmpl_prog2+=$'}\n'
 tmpl_prog2+=$': returnsubst\n'
-tmpl_prog2+=$'s#\\`([^\\x00]+)\\x00(.*)\\\'#\\2\\x00\\1#\n' #`
+tmpl_prog2+=$'# now back to starting configuration except last line of hold space has been substituted\n'
+tmpl_prog2+=$'# swap ordering for substitution\n'
+tmpl_prog2+=$'s#\\`([^\\x00]+)\\x00(.*)\\\'#\\2\\x00\\1#\n'
 tmpl_prog2+=$'b finishtmpl\n'
 tmpl_prog2+=$': nomatcherr\n'
 tmpl_prog2+=$'= ; i Impossible non-match\n'
 tmpl_prog2+=$'Q 1\n'
-tmpl_prog2+=$'\n'
 
 ssed() {
     sed --sandbox -En "$@"
 }
+ssed_str() {
+    local text="$1"
+    shift
+    ( set -o pipefail;
+      # ensure we do not add an extra newline at the end
+      printf "%s\n" "$text" |
+	  ssed "$@" |
+	  head -c -1
+      )
+}
+ssed_file() {
+    local fn="$1"
+    shift
+    ssed_str "$(< "$fn")" "$@"
+}
+
 make_tmpl_prog() {
     local cmds=""
     local i=1
     while (( $# > 0 )); do
-	cmds+='s#'$i'\x00#\'"$1"'\x00#; t accumulate'
+	cmds+="s#${i}\\x00#${1}\\x00#; t accumulate"
 	cmds+=$'\n'
 	(( i++ ))
+	shift
     done
     local prog="$tmpl_prog1$cmds$tmpl_prog2"
-    printf "%s" "$do_sub"
+    printf "%s" "$prog"
 }
 process_template() {
     local prog="$1"  # tmpl_prog
-    ( shopt -s pipefail;
-	  ssed -e "$prog" |
-	  head -c -1
-    )
+    local progfile="$(mktemp -p $serviced)"
+    printf "%s" "$prog" >"$progfile"
+    ssed_file "$2" -f "$progfile"
 }
 re_quote() {
-    ( shopt -s pipefail;
-      printf "%s\n" "$1" |
-	  ssed -e "$requote_prog" |
-	  head -c -1
-    )
+    ssed_str "$1" -f "$re_quote_file"
 }
 legal_name() {
     local s="$1" tmp
@@ -164,14 +198,14 @@ legal_name() {
     [ "$s" != "$tmp" ] && return 1
     [ "${s//:}" != "$s" ] && return 1
     [ "${s/\/}" != "$s" ] && return 1
-    echo "$s"
+    return 0
 }
 legal_list() {
     local s="$1" tmp
+    [ -z "$s" ] && return 0
     printf -v tmp "%q" "$s"
     [ "$s" != "$tmp" ] && return 1
     [ "${s/\/}" != "$s" ] && return 1
-    echo "$s"
 }
 if ! (legal_name "$service_name" >/dev/null 2>&1); then
     echo "Service name must not contain : or shell special characters: '$service_name'" >&2
@@ -195,7 +229,8 @@ cleanup() {
 trap cleanup EXIT
 trap on_error ERR
 declare -a services
-
+re_quote_file="$(mktemp -p $serviced)"
+printf "%s" "$re_quote_prog" >$re_quote_file
 
 get_min() {
     local val="$1"
@@ -282,7 +317,8 @@ check_path() {
 	    exit 1
 	    ;;
     esac
-    echo "$tmp"
+    tmp="$(printf "%s" "$tmp" | tr -d '\n')"
+    printf "%s" "$tmp"
 }
 
 check_file_exists() {
@@ -325,15 +361,15 @@ check_system_int() {
 available_services() {
     local -a svcs
     local tmp
-    for s in $(ls "$service_dir" | grep -v '.service$'); do
-	! [ -f "$s" ] && continue
-	! [ -x "$s" ] && continue
+    for s in $(ls "$service_dir" | grep -v '\.service$'); do
+	! [ -f "$service_dir/$s" ] && continue
+	! [ -x "$service_dir/$s" ] && continue
 	printf -v tmp "%q" "$s"
 	if [ "$tmp" != "$s" ] || [ "${s//:}" != "$s" ] ; then
 	    echo "Warning: discarding service '$s' due to illegal characters in name" >&2
 	    continue
 	fi
-  	svcs[${#$svcs[@]}]="$s"
+  	svcs[${#svcs[@]}]="$s"
     done
     ( IFS=":"; echo "${svcs[*]}" )
 }
@@ -343,7 +379,7 @@ list_add_elt() {
     local tmp
     #  Ensure we never have any potential problems
     printf -v tmp "%q" "$elt"
-    if [ -z "$s" ] ||
+    if [ -z "$elt" ] ||
 	   [ "$tmp" != "$elt" ] ||
 	   [ "${elt//:}" != "$elt" ] ; then
 	echo "Warning: discarding '$s' due to containing either no or illegal characters" >&2
@@ -364,9 +400,8 @@ list_add_elt() {
 list_member() {
     local elt="$1"
     local ls="$2"
-    case ls in
+    case "$ls" in
 	"$elt":* | *:"$elt" | *:"$elt":* | "$elt")
-	    echo -n "$elt"
 	    return 0
 	    ;;
 	*)
@@ -383,10 +418,10 @@ check_services() {
     local excluded="$2"
     local s ls=""
     if [ -z "$allowed" ]; then
-	allowed="$(available-services)"
+	allowed="$(available_services)"
     fi
     for s in ${allowed//:/ }; do
-	list_member "$s" "$excluded" || continue
+	list_member "$s" "$excluded" && continue
 	ls="$(list_add_elt "$s" "$ls")"
     done
     echo "$ls"
@@ -415,8 +450,14 @@ system_file_size_limit="$(check_system_posint "${system_file_size_limit}" "file 
 system_table_size_limit="$(check_system_posint "${system_table_size_limit}" "table size")"
 system_table_lines_limit="$(check_system_posint "${system_table_lines_limit}" "table lines")"
 system_template_size_limit="$(check_system_posint "${system_template_size_limit}" "template size")"
-system_allowed_services="$(legal_list "${system_allowed_services}")"
-system_excluded_services="$(legal_list "${system_allowed_services}")"
+if ! legal_list "${system_allowed_services}"; then
+    echo "Allowed services list cannot be processed: '${system_allowed_services}'"
+    exit 1
+fi
+if ! legal_list "${system_excluded_services}"; then
+    echo "Excluded services list cannot be processed: '${system_excluded_services}'"
+    exit 1
+fi
 system_excluded_services="$(list_add_elt "$service_name" "$system_excluded_services")"
 script=""
 infile=""
@@ -439,7 +480,7 @@ svc=""
 allowed_services=""
 excluded_services=""
 
-declare -a tmpls tmpl_svcs tmpl_tps
+declare -a tmpls tmpl_svcs tmpl_tps tmpl_scripts
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -456,7 +497,7 @@ while [ $# -gt 0 ]; do
 		exit 1
 	    fi
 	    tmp="$(check_path "$(pwd)" "$2" "template")"
-	    printf "$s %s %q\n" "$svc" "file" "$tmp" >>"$template_file"
+	    printf "%s %s %q\n" "$svc" "file" "$tmp" >>"$template_file"
 	    ;;
 	--template)
 	    if [ -z "$svc" ]; then
@@ -465,7 +506,7 @@ while [ $# -gt 0 ]; do
 	    fi
 	    tmp="$(mktemp -p $serviced)"
 	    printf "%s\n" "$2" >"$tmp"
-	    printf "$s %s %q\n" "$svc" "expr" "$tmp" >>"$template_file"
+	    printf "%s %s %q\n" "$svc" "expr" "$tmp" >>"$template_file"
 	    ;;
 	--table)
 	    tmp="$(check_path "$(pwd)" "$2" "table file")"
@@ -496,8 +537,8 @@ while [ $# -gt 0 ]; do
 	    template_size_limit="$(check_positive_integer "$2" "${system_template_size_limit}")"
 	    ;;
 	--excluded_services)
-	    tmp="$(legal_name "$2")"
-	    if [ -z "$tmp" ]; then
+	    tmp="$2""$(legal_name "$2")"
+	    if ! legal_name "$tmp"; then
 		echo "Illegal excluded service name $2, aborting" >&2
 		exit 1
 	    fi
@@ -519,8 +560,6 @@ if [ -z "$infile" ]; then
     exit 1
 fi
 check_file_exists "$infile"
-if [ "$missing_input" = "fail" ]; then
-fi
 if [ -z "$outdir" ]; then
     echo "Output directory name must be specified!" >&2
     exit 1
@@ -529,6 +568,7 @@ if [ -z "$outfile" ]; then
     echo "Services file for generated services must be specified" >&2
     exit 1
 fi
+printf "%s" "$re_quote_prog" >"$outdir/re_quote.sed"
 outpath="${outdir}/${outfile}"
 outpath="$(realpath "${outpath}")"
 tmp="$(dirname "${outpath}")"
@@ -568,12 +608,13 @@ while read s tp tf; do
     tmpl_tps[$i]="$tp"
     tmpl_svcs[$i]="$s"
     tmpl_text[$i]="$(< "$tf")"
+    tmpl_scripts[$i]="$(mktemp -p $serviced)"
     if ! list_member "$s" "$allowed_services"; then
 	echo "Service $s is either not available or not allowed" >&2
 	exit 1
     fi
     tfp="$(realpath "$tf")"
-    (( i++ ))
+    (( ++i , 1 ))
     if [ "$template_size_limit" ]; then
 	if (( $(stat -c %s "$tfp") >
 	      ( $template_size_limit * 1024 ) )); then
@@ -607,7 +648,7 @@ fi
 
 # impose limits here to ensure the complicated
 # sed programs embedded in this script are included
-if "$ulimit_flags"; then
+if [ "$ulimit_flags" ]; then
     ulimit $ulimit_flags
 fi
    
@@ -630,10 +671,9 @@ expand_template() {
     local tmpl_no="$4"
     local prog="$5"
     local params
-    if ! params="$(cat "$tmpl" |
-    	      	 process_template "$prog")"; then
+    if ! params="$(process_template "$prog" "$tmpl")"; then
 	local err=$?
-	if (( $err = 2 )); then
+	if (( $err == 2 )); then
 	    template_error "$tp" "$tmpl_no" "$tmpl_src" \
 	    		   "Illegal XML closing tag"
 	else
@@ -661,29 +701,37 @@ expand_templates() {
 	svc="${tmpl_svcs[$i]}"
 	tp="${tmpl_tps[$i]}"
 	tmpl="${tmpls[$i]}"
-	expand_template "$svc" "$tp" "$tmpl" $i "$prog" 
+	expand_template "$svc" "$tp" "$tmpl" $i "$prog"
     done    
 }
 if [ "$ulimit_flags" ]; then
     ulimit ${ulimit_flags}
 fi
 
+
+re_quote_and_expand_templates() {
+    local j tbl_k=$1 svcs_file="$2"
+    shift 2
+    local M=$#
+    local -a quoted_values
+    for (( j = 0; j < M; j++ )); do
+	quoted_values[$j]="$(re_quote "$1")"
+	shift
+    done
+    local tmpl_prog="$(make_tmpl_prog "${quoted_values[@]}")"
+    # for debugging
+    printf "%s" "$tmpl_prog" >"$outdir/template_subst_${tbl_k}.sed"
+    expand_templates "$(make_tmpl_prog "${quoted_values[@]}")" >>"$svcs_file"
+}
+
 exec 10<&0
 exec <"$infile"
 svcs_file="$(mktemp -p "$serviced")"
+tbl_line=1
 while read -a vals; do
-    for (( i = 0; i < N; i++ )); do
-	M=${#vals[@]}
-	unset quoted_vals
-	for (( j = 0; j < M; j++ )); do
-	    quoted_vals[$j]="$(re_quote "$val")"
-	done
-	expand_templates "$(make_tmpl_prog "$quoted_vals[@]")" >>"$svcs_file"
-    done
+    re_quote_and_expand_templates "$tbl_line" "$svcs_file" "${vals[@]}"
+    (( ++tbl_line ))
 done
 exec <&10
 exec 10<&-
 cp "$svcs_file" "$outpath"
-
-
-

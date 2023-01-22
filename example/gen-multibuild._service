@@ -4,6 +4,10 @@
     <param name="service">sed</param>
     <param name="template-file">spec-sed-in.srv.tmpl</param>
     <param name="template-file">spec-sed.srv.tmpl</param>
+    <param name="services-file">spec-sed._services</param>
+  </service>
+  <service name="run-services" mode="trylocal">
+    <param name="services-file">spec-sed._services</param>
   </service>
   <service name="sed" mode="trylocal">
     <param name="script">multibuild.sed</param>
