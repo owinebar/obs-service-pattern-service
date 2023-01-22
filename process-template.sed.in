@@ -1,0 +1,109 @@
+/^\w(\w|[+-])*(\s|$)/ {
+    t clear0; : clear0
+    h
+    s/^(\w(\w|[+-])*)(\s.*)?$/\1\x00/ ; t validname
+    =; i Invalid name
+    p
+    Q 1
+    : validname
+    x
+    s/^(\w(\w|[+-])*)\s+(\S.*)$/\3/
+    t clear1
+    : clear1
+    s/<<EOF\s*(\n|\')//; t EOFloop
+    # else whatever is left on the line is the value of the parameter
+    H
+    b gosubst
+
+    : EOFloop
+    # take care not to exit sed before closing the parameter block
+    $ b finishtmpl
+    n
+    t clear2
+    : clear2
+    s#\`EOF(\n|\')## ; t gosubst
+    H
+    b EOFloop
+    : gosubst
+    z
+    x
+    s#\`([^\x00]+)\x00\n#\1\x00#
+    # swap ordering for substitution
+    s#\`([^\x00]+)\x00(.*)\'#\2\x00\1#
+    b subst
+    : finishtmpl
+    # Check for illegal xml close tags
+    h
+    s#\`([^\x00]+)\x00(.*)\'#\2#
+    \#</(service|param)# {
+	=; i Illegal xml close
+	p
+	Q 2
+    }
+    z; x
+    s#\`([^\x00]+)\x00(.*)\'#<param name="\1">\2</param>#
+    p
+    d
+}
+# Any other lines are illegal
+=; i Unrecognized
+p
+Q 1
+
+
+: subst
+/\$|\\/ {
+    : findnextsub
+    t clear3
+    : clear3
+    # if we are at the end of text
+    # clean up and restart cycle
+    s/\`\x00// ; t joinhold
+    # s/\`\n//; t accumulatenl
+    # Otherwise if there are non-control chars, accumulate 
+    s/\`([^\$\x00]+)/\1\x00/; t accumulate
+    # Must have a control sequence at the head
+    s/\`\\\\/\\\x00/ ; t accumulate
+    s/\`\\\$/\$\x00/ ; t accumulate
+    s/\`\\/\\\x00/ ; t accumulate
+    s/\`\$\{([1-9][0-9]*)\}/\1\x00/ ; t substitute
+    s/\`\$/\$\x00/ ; t accumulate
+    # should be impossible
+    b nomatcherr
+    :substitute
+    # commands of the form
+    # s#\`<parameter number>\x00#<replacement text>\x00#; t accumulate
+####SUBSTITUTIONS
+    # if not matched, provide empty value
+    s/\`[^\x00]+\x00/\x00/; t accumulate
+    b nomatcherr
+
+    : accumulate
+    # First line of pattern space contains text to accumulate
+    # second line contains unprocessed text
+    # hold space contains processed text
+    s/\`/\x00/
+    x
+    G
+    s/\`([^\x00]*)\n\x00([^\x00]*)\x00(.*)\'/\1\2/
+    x
+    s/\`\x00([^\x00]*)\x00(.*)\'/\2/
+    b findnextsub
+
+    : joinhold
+    s/\'/\x00/
+    G
+    s/\`([^\x00]*\x00)\n/\1/
+    x;z;x
+    b finishtmpl
+    
+}
+: returnsubst
+# now back to starting configuration except last line of hold space has been substituted
+# swap ordering for substitution
+s#\`([^\x00]+)\x00(.*)\'#\2\x00\1#
+b finishtmpl
+: nomatcherr
+= ; i Impossible non-match
+Q 1
+
