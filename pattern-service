@@ -8,6 +8,7 @@ if [ "$service_name" = "bash" ]; then
     echo "Service name not recognized" >&2
     exit 1
 fi
+DEBUG=${DEBUG:-0}
 ####SED_PROGRAMS
 re_quote_prog=""
 re_quote_prog+=$'# Initialize hold space\n'
@@ -154,6 +155,7 @@ tmpl_prog2+=$'Q 1\n'
 ssed() {
     sed --sandbox -En "$@"
 }
+
 ssed_str() {
     local text="$1"
     shift
@@ -164,6 +166,7 @@ ssed_str() {
 	  head -c -1
       )
 }
+
 ssed_file() {
     local fn="$1"
     shift
@@ -212,13 +215,13 @@ if ! (legal_name "$service_name" >/dev/null 2>&1); then
     exit 1
 fi
 serviced=$(mktemp -d)
-DEBUG=1
+
 on_error() {
     local last_command="$BASH_COMMAND"
     local last_line="${BASH_LINENO[0]}"
     local last_src="${BASH_SOURCE[0]}"
     echo "Error in service $service_name" >&2
-    if (( $DEBUG )); then
+    if (( DEBUG )); then
 	printf "%s:%s\t%s\n" "$last_src" "$last_line" "$last_command" >&2
     fi
     exit 1
@@ -458,7 +461,6 @@ if ! legal_list "${system_excluded_services}"; then
     echo "Excluded services list cannot be processed: '${system_excluded_services}'"
     exit 1
 fi
-system_excluded_services="$(list_add_elt "$service_name" "$system_excluded_services")"
 script=""
 infile=""
 outfile=""
@@ -568,7 +570,9 @@ if [ -z "$outfile" ]; then
     echo "Services file for generated services must be specified" >&2
     exit 1
 fi
-printf "%s" "$re_quote_prog" >"$outdir/re_quote.sed"
+if (( DEBUG )); then
+    printf "%s" "$re_quote_prog" >"$outdir/re_quote.sed"
+fi
 outpath="${outdir}/${outfile}"
 outpath="$(realpath "${outpath}")"
 tmp="$(dirname "${outpath}")"
@@ -664,6 +668,7 @@ template_error() {
     fi
     exit 1
 }
+
 expand_template() {
     local svc="$1"
     local tp="$2"
@@ -720,18 +725,22 @@ re_quote_and_expand_templates() {
     done
     local tmpl_prog="$(make_tmpl_prog "${quoted_values[@]}")"
     # for debugging
-    printf "%s" "$tmpl_prog" >"$outdir/template_subst_${tbl_k}.sed"
+    if (( $DEBUG )); then
+	printf "%s" "$tmpl_prog" >"$outdir/template_subst_${tbl_k}.sed"
+    fi
     expand_templates "$(make_tmpl_prog "${quoted_values[@]}")" >>"$svcs_file"
 }
 
 exec 10<&0
 exec <"$infile"
 svcs_file="$(mktemp -p "$serviced")"
+echo "<services>" >$svcs_file
 tbl_line=1
 while read -a vals; do
     re_quote_and_expand_templates "$tbl_line" "$svcs_file" "${vals[@]}"
     (( ++tbl_line ))
 done
+echo "</services>" >>$svcs_file
 exec <&10
 exec 10<&-
 cp "$svcs_file" "$outpath"
