@@ -546,7 +546,7 @@ expand_template() {
 	fi
 
     fi
-    local xml="<service name=\"$svc\" mode=\"trylocal\">"
+    local xml="  <service name=\"$svc\" mode=\"trylocal\">"
     #local xml="<service name=\"$svc\">"
     xml+=$'\n'
     xml+="$params"
@@ -596,6 +596,13 @@ svcs_file="$(mktemp -p "$serviced")"
 echo "<services>" >$svcs_file
 tbl_line=1
 while read -a vals; do
+    if (( ${#vals[@]} == 0 )); then
+	# ignore empty lines
+	continue
+    elif [ "${vals[0]}" != "$(echo ${vals[0]} | sed -re 's/^#//' |tr -d '\n' )" ]; then
+	# discard comments
+	continue
+    fi
     re_quote_and_expand_templates "$tbl_line" "$svcs_file" "${vals[@]}"
     (( ++tbl_line ))
 done

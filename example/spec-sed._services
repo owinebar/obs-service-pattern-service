@@ -191,28 +191,4 @@ p</param>
 <param name="syntax">extended</param>
 <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@//g
-s/@REPOCC_VERSION@//g
-p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file"></param>
-<param name="out"></param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
-</service>
-<service name="sed" mode="trylocal">
-<param name="script"></param>
-<param name="file">emacs.spec</param>
-<param name="out"></param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
-</service>
 </services>
