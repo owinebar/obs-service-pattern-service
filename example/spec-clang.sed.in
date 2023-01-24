@@ -1,5 +1,5 @@
-%define repocc_vendor ${1}
-%define repocc_version ${2}
+%define repocc_vendor @REPOCC_VENDOR@
+%define repocc_version @REPOCC_VERSION@
 
 %define repocc %{repocc_vendor}%{repocc_version}
 Substitute: repocc %{repocc}

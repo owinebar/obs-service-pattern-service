@@ -1,194 +1,194 @@
 <services>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/gcc/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/gcc/g
 s/@REPOCC_VERSION@/10/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-gcc.sed.in</param>
-<param name="out">spec-gcc-10.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-gcc.sed.in</param>
+    <param name="out">spec-gcc-10.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-gcc-10.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-gcc10.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-gcc-10.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-gcc10.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/gcc/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/gcc/g
 s/@REPOCC_VERSION@/11/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-gcc.sed.in</param>
-<param name="out">spec-gcc-11.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-gcc.sed.in</param>
+    <param name="out">spec-gcc-11.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-gcc-11.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-gcc11.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-gcc-11.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-gcc11.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/gcc/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/gcc/g
 s/@REPOCC_VERSION@/12/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-gcc.sed.in</param>
-<param name="out">spec-gcc-12.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-gcc.sed.in</param>
+    <param name="out">spec-gcc-12.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-gcc-12.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-gcc12.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-gcc-12.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-gcc12.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/gcc/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/gcc/g
 s/@REPOCC_VERSION@/13/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-gcc.sed.in</param>
-<param name="out">spec-gcc-13.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-gcc.sed.in</param>
+    <param name="out">spec-gcc-13.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-gcc-13.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-gcc13.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-gcc-13.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-gcc13.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/clang/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/clang/g
 s/@REPOCC_VERSION@/13/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-clang.sed.in</param>
-<param name="out">spec-clang-13.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-clang.sed.in</param>
+    <param name="out">spec-clang-13.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-clang-13.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-clang13.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-clang-13.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-clang13.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/clang/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/clang/g
 s/@REPOCC_VERSION@/14/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-clang.sed.in</param>
-<param name="out">spec-clang-14.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-clang.sed.in</param>
+    <param name="out">spec-clang-14.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-clang-14.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-clang14.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-clang-14.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-clang14.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/clang/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/clang/g
 s/@REPOCC_VERSION@/15/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-clang.sed.in</param>
-<param name="out">spec-clang-15.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-clang.sed.in</param>
+    <param name="out">spec-clang-15.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-clang-15.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-clang15.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-clang-15.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-clang15.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="expression">s/@REPOCC_VENDOR@/clang/g
+  <service name="sed" mode="trylocal">
+    <param name="expression">s/@REPOCC_VENDOR@/clang/g
 s/@REPOCC_VERSION@/16/g
 p</param>
-<param name="script">spec-header.sed</param>
-<param name="script">spec-sed.sed</param>
-<param name="file">spec-clang.sed.in</param>
-<param name="out">spec-clang-16.sed</param>
-<param name="mode">pipe</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+    <param name="script">spec-header.sed</param>
+    <param name="script">spec-sed.sed</param>
+    <param name="file">spec-clang.sed.in</param>
+    <param name="out">spec-clang-16.sed</param>
+    <param name="mode">pipe</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
-<service name="sed" mode="trylocal">
-<param name="script">spec-clang-16.sed</param>
-<param name="file">emacs.spec</param>
-<param name="out">emacs-clang16.spec</param>
-<param name="mode">script</param>
-<param name="default-print">off</param>
-<param name="null-data">off</param>
-<param name="syntax">extended</param>
-<param name="missing-input">fail</param>
+  <service name="sed" mode="trylocal">
+    <param name="script">spec-clang-16.sed</param>
+    <param name="file">emacs.spec</param>
+    <param name="out">emacs-clang16.spec</param>
+    <param name="mode">script</param>
+    <param name="default-print">off</param>
+    <param name="null-data">off</param>
+    <param name="syntax">extended</param>
+    <param name="missing-input">fail</param>
 </service>
 </services>

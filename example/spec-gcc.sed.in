@@ -1,5 +1,5 @@
-%define repocc_vendor ${1}
-%define repocc_version ${2}
+%define repocc_vendor @REPOCC_VENDOR@
+%define repocc_version @REPOCC_VERSION@
 
 Substitute=: gcc-32bit %{repocc}-32bit
 Substitute=: gcc-c++ %{repocc}-c++ 
@@ -56,27 +56,9 @@ Substitute: gcc %{repocc}
 %define repo_cc gcc-%{repocc_version}
 %define repo_cxx g++-%{repocc_version}
 %define repo_d gdc-%{repocc_version}
-%elif "%{repocc_vendor}" == "clang"
-Substitute: repocc %{repocc}
-Substitute: libstdc++6 libc++1
-Substitute: libstdc++6-devel libc++1-devel
-Substitute: gcc-d ldc
-Macros:
-%define repo_cc clang-%{repocc_version}
-%define repo_cxx clang++-%{repocc_version}
-%define repo_d ldc
-:Macros
 
-%endif
-%endif
-
-
-%if "%{repocc_vendor}" == "gcc"
 %if 0%{?repocc_version} > 9
 %define with_nativecomp 1
 %define with_nativecompaot 1
-%endif
-%endif
-%elif "%{repocc_vendor}" == "clang"
 %endif
 
